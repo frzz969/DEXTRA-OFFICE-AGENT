@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  js:
+    name: TypeScript (Node 22)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.0.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      # Lockfile may lag behind newly added workspace packages.
+      - name: Install
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm turbo typecheck
+
+      - name: Test
+        run: pnpm turbo test
+
+  python:
+    name: FastAPI backend (stabilizing)
+    runs-on: ubuntu-latest
+    # Backend is being ported from the DEXTRA reference; do not block CI yet.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install backend (if configured)
+        working-directory: apps/api
+        run: |
+          if [ -f pyproject.toml ]; then
+            python -m pip install --upgrade pip
+            python -m pip install -e ".[dev]"
+          elif [ -f requirements.txt ]; then
+            python -m pip install -r requirements.txt
+          else
+            echo "No pyproject.toml or requirements.txt in apps/api yet; skipping install."
+          fi
+
+      - name: Byte-compile
+        run: python -m compileall apps/api/app
+
+      - name: Pytest (if present)
+        working-directory: apps/api
+        run: |
+          if [ -d tests ] && python -c "import pytest" 2>/dev/null; then
+            python -m pytest -q
+          else
+            echo "pytest or tests/ not available yet; skipping."
+          fi

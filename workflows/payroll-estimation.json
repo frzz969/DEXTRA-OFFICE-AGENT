@@ -1,0 +1,41 @@
+{
+  "id": "payroll-estimation",
+  "name": "Attendance Analysis → Payroll Estimation → Approval → Report",
+  "version": "0.1.0",
+  "_status": "example",
+  "_note": "Example definition derived from docs/architecture/overview.md. Not executed by a runtime yet.",
+  "triggers": [
+    { "type": "schedule", "cron": "0 6 25 * *", "description": "Monthly, before payroll cutoff" },
+    { "type": "manual", "description": "Requested by HR or Finance manager" }
+  ],
+  "steps": [
+    {
+      "id": "analyze-attendance",
+      "type": "agent",
+      "assignee": "hr-agent",
+      "inputs": { "period": "monthly", "source": "hr.attendance" },
+      "outputs": ["attendanceSummary"]
+    },
+    {
+      "id": "estimate-payroll",
+      "type": "agent",
+      "assignee": "finance-agent",
+      "inputs": { "attendanceSummary": "{{steps.analyze-attendance.outputs.attendanceSummary}}" },
+      "outputs": ["payrollDraft"]
+    },
+    {
+      "id": "approve-payroll",
+      "type": "approval",
+      "assignee": "finance-manager",
+      "inputs": { "payrollDraft": "{{steps.estimate-payroll.outputs.payrollDraft}}", "riskLevel": "high" },
+      "outputs": ["approvalDecision"]
+    },
+    {
+      "id": "publish-report",
+      "type": "tool",
+      "assignee": "report-generator",
+      "inputs": { "approvalDecision": "{{steps.approve-payroll.outputs.approvalDecision}}" },
+      "outputs": ["reportUrl"]
+    }
+  ]
+}

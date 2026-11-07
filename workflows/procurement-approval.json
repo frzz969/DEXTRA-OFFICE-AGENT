@@ -1,0 +1,41 @@
+{
+  "id": "procurement-approval",
+  "name": "Procurement Purchase Order Approval",
+  "version": "0.1.0",
+  "_status": "example",
+  "_note": "Example definition derived from docs/architecture/overview.md and docs/modules/inventory.md. Not executed by a runtime yet.",
+  "triggers": [
+    { "type": "event", "event": "inventory.low_stock", "description": "Triggered when stock falls below threshold" },
+    { "type": "manual", "description": "Requested by Operations or Inventory manager" }
+  ],
+  "steps": [
+    {
+      "id": "detect-shortage",
+      "type": "agent",
+      "assignee": "inventory-agent",
+      "inputs": { "source": "inventory.items", "minThreshold": true },
+      "outputs": ["shortageList"]
+    },
+    {
+      "id": "draft-purchase-order",
+      "type": "agent",
+      "assignee": "inventory-agent",
+      "inputs": { "shortageList": "{{steps.detect-shortage.outputs.shortageList}}" },
+      "outputs": ["purchaseOrderDraft"]
+    },
+    {
+      "id": "approve-purchase-order",
+      "type": "approval",
+      "assignee": "operations-manager",
+      "inputs": { "purchaseOrderDraft": "{{steps.draft-purchase-order.outputs.purchaseOrderDraft}}", "riskLevel": "medium" },
+      "outputs": ["approvalDecision"]
+    },
+    {
+      "id": "submit-to-supplier",
+      "type": "tool",
+      "assignee": "procurement-connector",
+      "inputs": { "approvalDecision": "{{steps.approve-purchase-order.outputs.approvalDecision}}" },
+      "outputs": ["supplierReference"]
+    }
+  ]
+}

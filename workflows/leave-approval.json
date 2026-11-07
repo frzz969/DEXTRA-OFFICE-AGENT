@@ -1,0 +1,33 @@
+{
+  "id": "leave-approval",
+  "name": "Employee Leave Request Approval",
+  "version": "0.1.0",
+  "_status": "example",
+  "_note": "Example definition derived from docs/architecture/overview.md and docs/modules/human-resources.md. Not executed by a runtime yet.",
+  "triggers": [
+    { "type": "event", "event": "hr.leave_requested", "description": "Employee submits a leave request" }
+  ],
+  "steps": [
+    {
+      "id": "check-policy",
+      "type": "agent",
+      "assignee": "hr-agent",
+      "inputs": { "leaveRequestId": "{{event.leaveRequestId}}", "source": "hr.policies" },
+      "outputs": ["policyCheck"]
+    },
+    {
+      "id": "approve-leave",
+      "type": "approval",
+      "assignee": "department-manager",
+      "inputs": { "policyCheck": "{{steps.check-policy.outputs.policyCheck}}", "riskLevel": "low" },
+      "outputs": ["approvalDecision"]
+    },
+    {
+      "id": "update-records",
+      "type": "tool",
+      "assignee": "hr-records",
+      "inputs": { "approvalDecision": "{{steps.approve-leave.outputs.approvalDecision}}" },
+      "outputs": ["recordStatus"]
+    }
+  ]
+}

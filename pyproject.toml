@@ -1,0 +1,39 @@
+[project]
+name = "dextra-api"
+version = "2.0.0"
+description = "DEXTRA v2 — Governed Enterprise AI Workforce & Operations Platform (API)"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "sqlalchemy>=2.0.36",
+    "alembic>=1.13",
+    "pydantic>=2.12",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "httpx>=0.27",
+]
+# PostgreSQL sengaja opsional: psycopg belum punya wheel untuk Termux/Android.
+# Produksi (Docker) memasang extra ini secara eksplisit.
+postgres = [
+    "psycopg[binary]>=3.2",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# Kode Python ada di apps/api (paket `app`), bukan di root monorepo pnpm.
+package-dir = { "" = "apps/api" }
+
+[tool.setuptools.packages.find]
+where = ["apps/api"]
+
+[tool.pytest.ini_options]
+testpaths = ["apps/api/tests"]
+pythonpath = ["apps/api"]
+addopts = "-q"

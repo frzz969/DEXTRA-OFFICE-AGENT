@@ -1,0 +1,1 @@
+"""Modul Skill Registry."""

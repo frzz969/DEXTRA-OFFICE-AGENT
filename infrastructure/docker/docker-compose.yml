@@ -1,0 +1,57 @@
+# DEXTRA v2 — stack pengembangan.
+#
+# A23 PERINGATAN KERAS: POSTGRES_PASSWORD & token gateway di bawah adalah DEFAULT DEV.
+#   Di production mode set env-nya eksplisit; jangan deploy dengan default ini.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: dextra
+      # A23: WAJIB override di luar dev lokal — nilai di bawah hanya untuk komposisi dev.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dextra}
+      POSTGRES_DB: dextra
+    ports:
+      - "5432:5432"
+    volumes:
+      - dextra-db:/var/lib/postgresql/data
+      - ./init/01-audit-permissions.sql:/docker-entrypoint-initdb.d/01-audit-permissions.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dextra -d dextra"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.api
+    environment:
+      DATABASE_URL: postgresql+psycopg://dextra:${POSTGRES_PASSWORD:-dextra}@db:5432/dextra
+      DEXTRA_AGENT_TOKEN: ${DEXTRA_AGENT_TOKEN:-agent-dev-token}
+      DEXTRA_OPS_TOKEN: ${DEXTRA_OPS_TOKEN:-ops-dev-token}
+      # Token gateway hanya melihat tenant ini. Tanpa nilai, ia tidak melihat
+      # data ber-tenant sama sekali (gagal-tertutup).
+      DEXTRA_LEGACY_TENANT: ${DEXTRA_LEGACY_TENANT:-dextra-demo}
+      DEXTRA_ALLOWED_ORIGINS: http://127.0.0.1:3000,http://localhost:3000
+      DEXTRA_ROOT: /app
+      DEXTRA_DATA_DIR: /app/data
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ../..
+      dockerfile: infrastructure/docker/Dockerfile.web
+    environment:
+      DEXTRA_API_URL: http://api:8000
+      DEXTRA_API_TOKEN: ${DEXTRA_OPS_TOKEN:-ops-dev-token}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  dextra-db:
