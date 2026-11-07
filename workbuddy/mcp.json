@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "dextra": {
+      "url": "http://127.0.0.1:8765",
+      "transport": "http",
+      "auth": {
+        "type": "bearer",
+        "tokenEnv": "DEXTRA_AGENT_TOKEN"
+      },
+      "allowedTools": [
+        "get_caller_context",
+        "get_org_rules",
+        "find_precedent",
+        "create_plan",
+        "office_agent_run",
+        "validate_plan",
+        "get_plan",
+        "list_plans",
+        "get_mandate",
+        "list_mandates",
+        "list_executions",
+        "get_status",
+        "list_specialists"
+      ],
+      "note": "Agent token only. Ops token (execute_action, submit_approval, issue_mandate, revoke_mandate) is never exposed to the agent (PRD §8.3, TC-010)."
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "DEXTRA Governed AI Workforce",
+  "version": "0.1.0",
+  "description": "Governed AI office agent: specialized workers, human-defined authority, accountable execution.",
+  "author": "DEXTRA Team",
+  "icon": "icon.svg",
+  "mcp": "mcp.json",
+  "minWorkBuddyVersion": "4.23.0"
+}

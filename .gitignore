@@ -45,3 +45,10 @@ data/
 .venv/
 __pycache__/
 *.pyc
+
+# video & social media productions (local only)
+video/
+social-media/
+
+# tooling state
+.playwright-mcp/

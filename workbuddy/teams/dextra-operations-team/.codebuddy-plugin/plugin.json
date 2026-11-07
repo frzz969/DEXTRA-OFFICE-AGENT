@@ -1,0 +1,93 @@
+{
+  "name": "dextra-operations-team",
+  "version": "1.0.0",
+  "description": "Governed cross-domain operations team: splits a request into finance, HR, and inventory parts, has each specialist produce its own output with sources, and consolidates one report. No member approves, issues a mandate, or executes anything.",
+  "author": {
+    "name": "DEXTRA Team",
+    "email": "team@dextra.local"
+  },
+  "license": "MIT",
+  "keywords": ["operations", "finance", "hr", "inventory", "coordination", "governance", "audit"],
+  "agents": [
+    "./agents/dextra-operations-team-team-lead.md",
+    "./agents/finance-agent.md",
+    "./agents/hr-agent.md",
+    "./agents/inventory-agent.md"
+  ],
+
+  "expertType": "team",
+  "agentName": "dextra-operations-team-team-lead",
+  "teamInfo": {
+    "leadAgent": "dextra-operations-team-team-lead",
+    "memberAgents": ["finance-agent", "hr-agent", "inventory-agent"]
+  },
+
+  "displayName": {
+    "en": "DEXTRA Operations Team",
+    "zh": "DEXTRA 运营协同团"
+  },
+  "profession": {
+    "en": "DEXTRA Operations Team",
+    "zh": "DEXTRA 运营协同团"
+  },
+  "displayDescription": {
+    "en": "Splits a cross-domain operations request into finance, HR, and inventory work, has each specialist deliver its own sourced output, then consolidates one report with every figure traced to a source. No member approves or executes.",
+    "zh": "把跨域运营需求拆给财务、人力、库存三名成员，收回带来源的产出后汇总成一份运营报告，不做决策与审批。"
+  },
+  "avatar": "avatars/team.png",
+  "categoryId": "09-OperationsHR",
+  "defaultInitPrompt": {
+    "en": "Put together this month's operations review — pull what you need from finance, HR, and inventory, and cite each source.",
+    "zh": "汇总本月运营复盘，从财务、人力、库存取数，并标注各自来源。"
+  },
+  "plugin": "dextra-operations-team",
+  "tags": [
+    { "en": "Cross-domain coordination", "zh": "跨域协调" },
+    { "en": "Source traceability", "zh": "数据溯源" },
+    { "en": "Governed execution", "zh": "受控执行" }
+  ],
+  "quickPrompts": [
+    {
+      "en": "Put together this month's operations review — pull what you need from finance, HR, and inventory, and cite each source.",
+      "zh": "汇总本月运营复盘，从财务、人力、库存取数，并标注各自来源。"
+    },
+    {
+      "en": "Two departments report different headcount numbers — show both with their sources instead of picking one.",
+      "zh": "两个部门报的人数不一致，把两个数字和来源都列出来，不要替我选。"
+    },
+    {
+      "en": "Which items are below reorder point, and what does that do to this month's cost?",
+      "zh": "哪些物料低于补货点？这对本月成本有什么影响？"
+    }
+  ],
+  "members": [
+    {
+      "id": "dextra-operations-team-team-lead",
+      "displayName": { "en": "Operations Coordinator", "zh": "运营协调官" },
+      "profession": { "en": "Cross-domain Operations Coordinator", "zh": "跨域运营协调官" },
+      "avatar": "avatars/dextra-operations-team-lead.png",
+      "role": "lead"
+    },
+    {
+      "id": "finance-agent",
+      "displayName": { "en": "Finance Analyst", "zh": "财务分析师" },
+      "profession": { "en": "Payroll & Financial Reporting Analyst", "zh": "薪酬与财务报告分析师" },
+      "avatar": "avatars/finance-agent.png",
+      "role": "member"
+    },
+    {
+      "id": "hr-agent",
+      "displayName": { "en": "HR Specialist", "zh": "人力资源专员" },
+      "profession": { "en": "HR Data & People Operations", "zh": "人力资源数据与人事运营" },
+      "avatar": "avatars/hr-agent.png",
+      "role": "member"
+    },
+    {
+      "id": "inventory-agent",
+      "displayName": { "en": "Inventory & Procurement Specialist", "zh": "库存与采购专员" },
+      "profession": { "en": "Stock & Procurement Analyst", "zh": "库存与采购分析师" },
+      "avatar": "avatars/inventory-agent.png",
+      "role": "member"
+    }
+  ]
+}

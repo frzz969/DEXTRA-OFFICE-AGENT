@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>DEXTRA — Governed Enterprise AI Workforce</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#050D2B; --navy2:#0A1845; --navy3:#101F5C; --purple:#7C3AED; --electric:#8B5CF6;
+  --electric2:#A78BFA; --cyan:#38BDF8; --white:#FFFFFF; --ink:#0F172A; --muted:#64748B; --line:#E2E8F0;
+  --bg:#F6F7FB;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:var(--navy);font-family:'Inter',system-ui,sans-serif;color:var(--ink);overflow:hidden}
+a{color:inherit}
+#deck{position:relative;width:100vw;height:100vh}
+/* progress + chrome */
+#progress-wrap{position:fixed;top:0;left:0;right:0;height:5px;background:rgba(255,255,255,.12);z-index:50}
+#progress{height:100%;width:0;background:linear-gradient(90deg,var(--purple),var(--electric2));transition:width .45s cubic-bezier(.22,1,.36,1)}
+#chrome{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:14px 28px;color:#fff;font-size:13px;pointer-events:none}
+#chrome .brand{font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:var(--electric2)}
+#counter{font-variant-numeric:tabular-nums;opacity:.9}
+#hint{opacity:.55}
+#nav-btns{pointer-events:auto;display:flex;gap:8px}
+#nav-btns button{cursor:pointer;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.08);color:#fff;border-radius:999px;padding:7px 16px;font-family:inherit;font-weight:600;font-size:13px}
+#nav-btns button:hover{background:var(--purple)}
+.slide{position:absolute;inset:0;display:none;flex-direction:column;padding:64px 72px 76px;overflow:hidden}
+.slide.active{display:flex}
+.slide.light{background:var(--bg)}
+.slide.dark{background:radial-gradient(1200px 700px at 85% -10%,rgba(124,58,237,.45),transparent 60%),radial-gradient(900px 600px at -10% 110%,rgba(56,189,248,.22),transparent 55%),linear-gradient(135deg,var(--navy) 0%,var(--navy2) 60%,var(--navy3) 100%);color:#fff}
+.slide.light::before{content:"";position:absolute;top:0;left:0;right:0;height:6px;background:linear-gradient(90deg,var(--navy),var(--purple),var(--electric2))}
+.kicker{font-size:12px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;color:var(--electric);margin-bottom:12px}
+.dark .kicker{color:var(--electric2)}
+h1{font-size:64px;line-height:1.02;font-weight:900;letter-spacing:-.02em}
+h2{font-size:42px;line-height:1.08;font-weight:800;letter-spacing:-.02em;margin-bottom:10px}
+.tagline{font-size:21px;font-weight:600;color:var(--electric2);margin:14px 0 8px}
+.dark .tagline{color:#C4B5FD}
+.sub{font-size:16px;line-height:1.55;color:var(--muted);max-width:780px}
+.dark .sub{color:#CBD5E1}
+.lead{font-size:17px;line-height:1.6;color:var(--muted);max-width:820px}
+.dark .lead{color:#CBD5E1}
+.grad{background:linear-gradient(90deg,#fff,var(--electric2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.light .grad{background:linear-gradient(90deg,var(--navy),var(--purple));-webkit-background-clip:text;background-clip:text;color:transparent}
+/* cover */
+.cover-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center;flex:1}
+.badge{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(167,139,250,.5);background:rgba(124,58,237,.18);color:#DDD6FE;font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:8px 14px;border-radius:999px;margin-bottom:22px}
+.cover-art{position:relative;height:420px;border-radius:24px;background:linear-gradient(160deg,rgba(124,58,237,.55),rgba(10,24,69,.25) 55%),repeating-linear-gradient(0deg,transparent 0 34px,rgba(255,255,255,.08) 34px 35px),repeating-linear-gradient(90deg,transparent 0 34px,rgba(255,255,255,.07) 34px 35px);border:1px solid rgba(255,255,255,.18);overflow:hidden}
+.cover-art::after{content:"DEXTRA";position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:92px;font-weight:900;letter-spacing:.08em;color:rgba(255,255,255,.14)}
+.orb{position:absolute;border-radius:50%;filter:blur(2px)}
+.orb1{width:150px;height:150px;background:radial-gradient(circle at 30% 30%,#C4B5FD,#7C3AED);top:38px;right:48px;box-shadow:0 24px 60px rgba(124,58,237,.5)}
+.orb2{width:78px;height:78px;background:radial-gradient(circle at 30% 30%,#7DD3FC,#0EA5E9);bottom:64px;left:44px}
+.cover-stats{display:flex;gap:12px;margin-top:26px;flex-wrap:wrap}
+.pill{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:12px 16px;min-width:140px}
+.pill b{display:block;font-size:20px;color:#fff}
+.pill span{font-size:12px;color:#CBD5E1}
+/* generic cards */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 10px 28px rgba(5,13,43,.06)}
+.dark .card{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14);color:#fff;box-shadow:none}
+.card h3{font-size:18px;margin-bottom:8px}
+.card p{font-size:14px;line-height:1.55;color:var(--muted)}
+.dark .card p{color:#CBD5E1}
+.card .num{font-size:12px;font-weight:800;letter-spacing:.16em;color:var(--purple);text-transform:uppercase;margin-bottom:8px}
+.icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:12px;background:linear-gradient(135deg,var(--navy),var(--purple));color:#fff}
+.icon.p{background:linear-gradient(135deg,var(--purple),var(--electric2))}
+.icon.c{background:linear-gradient(135deg,#0EA5E9,#38BDF8)}
+.icon.n{background:linear-gradient(135deg,var(--navy2),var(--navy))}
+/* checklists */
+.check{list-style:none}
+.check li{position:relative;padding-left:30px;margin-bottom:10px;font-size:15px;line-height:1.5}
+.check li::before{content:"✓";position:absolute;left:0;top:0;width:20px;height:20px;border-radius:50%;background:var(--purple);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.check li.warn::before{content:"!";background:#F59E0B}
+.check li.no::before{content:"×";background:#EF4444}
+/* flow */
+.flow{display:flex;align-items:stretch;gap:0;margin-top:18px}
+.fstep{flex:1;background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 14px;text-align:center;position:relative}
+.dark .fstep{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.15);color:#fff}
+.fstep b{display:block;font-size:14px;margin-bottom:6px}
+.fstep span{font-size:12px;line-height:1.45;color:var(--muted)}
+.dark .fstep span{color:#CBD5E1}
+.farrow{align-self:center;padding:0 8px;font-size:20px;color:var(--purple);font-weight:800;flex:0 0 auto}
+.fstep.hero{background:linear-gradient(135deg,var(--navy),var(--purple));color:#fff;border:none}
+.fstep.hero span{color:#E9D5FF}
+.fstep.hero b{color:#fff}
+/* table */
+table{width:100%;border-collapse:collapse;background:#fff;border-radius:16px;overflow:hidden;border:1px solid var(--line);font-size:14px}
+th{background:var(--navy);color:#fff;text-align:left;padding:13px 16px;font-size:13px}
+td{padding:12px 16px;border-top:1px solid var(--line);vertical-align:top;line-height:1.45}
+tr:nth-child(even) td{background:#F8FAFC}
+td.yes{color:#059669;font-weight:700}
+td.no{color:var(--muted)}
+.note{margin-top:14px;font-size:13px;color:var(--muted);background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:12px 16px;line-height:1.5}
+.dark .note{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.4);color:#FDE68A}
+/* misc */
+.split{display:grid;grid-template-columns:1.05fr .95fr;gap:28px;align-items:start}
+.num-badge{display:inline-flex;width:30px;height:30px;border-radius:50%;background:var(--purple);color:#fff;align-items:center;justify-content:center;font-weight:800;font-size:13px;margin-right:8px;flex:0 0 auto}
+.statement{font-size:26px;font-weight:700;line-height:1.4;max-width:900px}
+.tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;padding:5px 10px;border-radius:999px;margin-bottom:10px}
+.tag.p{background:#EDE9FE;color:#6D28D9}
+.tag.n{background:#E0E7FF;color:#1E3A8A}
+.tag.c{background:#E0F2FE;color:#0369A1}
+.slide-num{position:absolute;top:28px;right:36px;font-size:12px;font-weight:700;letter-spacing:.18em;color:var(--muted)}
+.dark .slide-num{color:#94A3B8}
+@media(max-width:900px){.slide{padding:40px 24px 70px}h1{font-size:44px}h2{font-size:32px}.grid4,.grid3,.cover-grid,.split,.grid2{grid-template-columns:1fr}.flow{flex-direction:column}.farrow{transform:rotate(90deg);padding:4px 0;text-align:center}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="progress-wrap"><div id="progress"></div></div>
+<div id="deck">
+<!-- 1 COVER -->
+<section class="slide dark active"><span class="slide-num">01 / 12</span>
+ <div class="cover-grid">
+  <div>
+   <span class="badge">✦ Hackathon / AI-Agent Competition</span>
+   <h1>DEXTRA</h1>
+   <p class="tagline">Governed Enterprise AI Workforce &amp; Operations Platform</p>
+   <p class="lead">Satu platform untuk mengelola AI workforce di perusahaan — dengan orkestrasi cerdas, agent spesialis, dan governance yang tidak bisa di-bypass.</p>
+   <div class="cover-stats">
+    <div class="pill"><b>4</b><span>Specialized Agents</span></div>
+    <div class="pill"><b>1</b><span>Orchestrator · WorkBuddy</span></div>
+    <div class="pill"><b>5</b><span>Governance Chain</span></div>
+   </div>
+  </div>
+  <div class="cover-art" role="img" aria-label="Visual abstrak DEXTRA: grid, orb ungu dan biru"><div class="orb orb1"></div><div class="orb orb2"></div></div>
+ </div>
+</section>
+<!-- 2 BACKGROUND & PROBLEM -->
+<section class="slide light"><span class="slide-num">02 / 12</span>
+ <p class="kicker">Background &amp; Problem</p>
+ <h2>AI di perusahaan sering <span class="grad">cepat, tapi liar</span></h2>
+ <p class="lead">Banyak perusahaan mulai memakai AI untuk HR, Finance, Inventory, dan Operations — tetapi pemakaiannya belum terkendali, belum terhubung, dan belum bisa diaudit.</p>
+ <div class="grid3" style="margin-top:22px">
+  <div class="card"><div class="icon">⚠</div><h3>AI tanpa aturan</h3><p>Agent bisa mengakses data atau mengambil tindakan sensitif tanpa izin yang jelas.</p></div>
+  <div class="card"><div class="icon p">⬡</div><h3>Terfragmentasi</h3><p>Setiap divisi punya tool sendiri — tidak ada satu pintu untuk mengorkestrasi pekerjaan.</p></div>
+  <div class="card"><div class="icon c">◐</div><h3>Tidak bisa diaudit</h3><p>Sulit membuktikan siapa menyetujui, kapan, dan dengan dasar apa sebuah aksi dijalankan.</p></div>
+ </div>
+ <div class="card" style="margin-top:16px"><h3>Pertanyaan kuncinya</h3><ul class="check"><li>Bagaimana perusahaan memakai AI <b>tanpa kehilangan kendali</b>?</li><li>Bagaimana manusia tetap memegang keputusan penting?</li><li>Bagaimana setiap aksi terekam dan bisa dipertanggungjawabkan?</li></ul></div>
+</section>
+<!-- 3 SOLUTION -->
+<section class="slide light"><span class="slide-num">03 / 12</span>
+ <p class="kicker">Our Solution</p>
+ <h2>DEXTRA: <span class="grad">AI workforce yang governed</span></h2>
+ <p class="tagline">Powerful AI. Governed by design.</p>
+ <p class="lead">DEXTRA menggabungkan tiga lapisan dalam satu platform, sehingga AI bisa bekerja produktif <b>dan</b> tetap aman serta terkendali.</p>
+ <div class="grid3" style="margin-top:20px">
+  <div class="card"><div class="num-badge">1</div><h3>Application</h3><p>Dashboard, workspace, dan halaman bisnis untuk pengguna sehari-hari.</p></div>
+  <div class="card"><div class="num-badge">2</div><h3>Intelligence</h3><p>WorkBuddy, orkestrasi agent, tools, dan workflow — pusat kecerdasan DEXTRA.</p></div>
+  <div class="card"><div class="num-badge">3</div><h3>Governance</h3><p>Permission, approval, policy enforcement, dan audit trail di backend.</p></div>
+ </div>
+ <p class="note">Prinsip inti: <b>semua agent wajib melewati governance — tidak ada jalur bypass.</b> Frontend hanya presentasi &amp; pemanggilan API; validasi governance ditegakkan di backend, bukan sekadar menyembunyikan tombol di UI.</p>
+</section>
+<!-- 4 HOW IT WORKS -->
+<section class="slide light"><span class="slide-num">04 / 12</span>
+ <p class="kicker">How DEXTRA Works</p>
+ <h2>Satu instruksi, <span class="grad">terorkestrasi penuh</span></h2>
+ <p class="lead">Alur dari permintaan manusia sampai hasil — setiap langkah terverifikasi, ter-approve bila sensitif, dan tercatat di audit trail.</p>
+ <div class="flow">
+  <div class="fstep"><b>👤 User</b><span>Memberi instruksi lewat dashboard</span></div><div class="farrow">→</div>
+  <div class="fstep"><b>🖥️ Web / API</b><span>Validasi identitas &amp; akses</span></div><div class="farrow">→</div>
+  <div class="fstep hero"><b>✦ WorkBuddy</b><span>Memahami &amp; menyusun rencana</span></div><div class="farrow">→</div>
+  <div class="fstep"><b>🤖 Agent Spesialis</b><span>HR · Finance · Inventory · Operations</span></div><div class="farrow">→</div>
+  <div class="fstep"><b>🛡️ Governance</b><span>Policy → approval → mandate</span></div><div class="farrow">→</div>
+  <div class="fstep"><b>⚙️ Execution</b><span>Workflow engine mengeksekusi</span></div><div class="farrow">→</div>
+  <div class="fstep"><b>📋 Audit + Dashboard</b><span>Tercatat &amp; ditampilkan</span></div>
+ </div>
+ <div class="grid2" style="margin-top:18px">
+  <div class="card"><h3>✓ Yang dijamin</h3><ul class="check"><li>Aksi sensitif (prepare / execute) menunggu persetujuan manusia</li><li>Eksekusi hanya jalan bila mandate valid</li><li>Setiap langkah dicatat ke audit trail dengan hash</li></ul></div>
+  <div class="card"><h3>✕ Yang tidak terjadi</h3><ul class="check"><li class="no">Agent menyetujui aksinya sendiri</li><li class="no">Mandate dibuat tanpa approval</li><li class="no">Logika bisnis ditaruh di frontend</li></ul></div>
+ </div>
+</section>
+<!-- 5 WORKBUDDY -->
+<section class="slide dark"><span class="slide-num">05 / 12</span>
+ <p class="kicker">WorkBuddy Orchestrator</p>
+ <h2>WorkBuddy: satu pintu, <span class="grad">semua pekerjaan</span></h2>
+ <p class="tagline">Your AI orchestrator — not the actor.</p>
+ <div class="split" style="margin-top:16px">
+  <div>
+   <div class="card"><h3>Peran WorkBuddy</h3><ul class="check"><li>Memahami instruksi user</li><li>Menyusun rencana &amp; mendelegasikan ke agent spesialis</li><li>Menggabungkan hasil menjadi output akhir</li><li>Memastikan aksi sensitif melewati governance</li></ul></div>
+   <p class="note">Penting: WorkBuddy <b>tidak</b> menyetujui, membuat mandate, atau mengeksekusi sendiri. Ia mengorkestrasi — governance yang memutuskan.</p>
+  </div>
+  <div>
+   <div class="flow" style="flex-direction:column;gap:10px;margin-top:0">
+    <div class="fstep hero"><b>✦ WorkBuddy</b><span>Orchestrator</span></div>
+    <div style="text-align:center;color:var(--electric2);font-weight:800">↓ mendelegasikan ↓</div>
+    <div class="fstep"><b>HR · Finance</b><span>Inventory · Operations</span></div>
+    <div style="text-align:center;color:var(--electric2);font-weight:800">↓ hasil kembali ↑</div>
+    <div class="fstep"><b>📄 Output Akhir</b><span>Laporan / rekomendasi untuk user</span></div>
+   </div>
+  </div>
+ </div>
+</section>
+<!-- 6 SPECIALIZED WORKFORCE -->
+<section class="slide light"><span class="slide-num">06 / 12</span>
+ <p class="kicker">Specialized AI Workforce</p>
+ <h2>Empat spesialis, <span class="grad">satu standar governance</span></h2>
+ <div class="grid4" style="margin-top:18px">
+  <div class="card"><div class="icon">👥</div><h3>HR Agent</h3><p>Rekrutmen, onboarding, dan administrasi karyawan — dipanggil &amp; diawasi WorkBuddy.</p></div>
+  <div class="card"><div class="icon p">💰</div><h3>Finance Agent</h3><p>Analisis keuangan &amp; penyusunan laporan — aksi sensitif wajib approval.</p></div>
+  <div class="card"><div class="icon c">📦</div><h3>Inventory Agent</h3><p>Stok, pergerakan barang, dan ketersediaan — berbasis data yang diizinkan.</p></div>
+  <div class="card"><div class="icon n">⚙️</div><h3>Operations Agent</h3><p>Koordinasi lintas domain — menghubungkan pekerjaan antar divisi.</p></div>
+ </div>
+ <div class="card" style="margin-top:16px"><h3>Aturan yang sama untuk semua</h3><ul class="check"><li>Keempat agent <b>dipanggil WorkBuddy</b> — bukan berjalan bebas</li><li>Tidak menyetujui / membuat mandate / mengeksekusi sendiri</li><li>Semua tindakan sensitif lewat governance &amp; tercatat di audit trail</li></ul></div>
+</section>
+<!-- 7 INTEGRATED MANAGEMENT -->
+<section class="slide light"><span class="slide-num">07 / 12</span>
+ <p class="kicker">Integrated Enterprise Management</p>
+ <h2>Satu dashboard, <span class="grad">seluruh operasi</span></h2>
+ <p class="lead">Bukan empat aplikasi terpisah — satu workspace tempat pengguna melihat pekerjaan, status, approval, dan hasil dalam satu alur.</p>
+ <div class="grid2" style="margin-top:18px">
+  <div class="card"><h3>✓ Yang terhubung</h3><ul class="check"><li>Dashboard &amp; halaman bisnis per domain (HR, Finance, Inventory, Operations)</li><li>Alur Instruksi → hasil tanpa berpindah sistem</li><li>Antarmuka tenang &amp; terkendali — AI terlihat, governance terlihat</li><li>Hierarki jelas untuk data padat: tabel, approval, risiko, audit</li></ul></div>
+  <div class="card"><h3>Prinsip tampilan</h3><ul class="check"><li><b>Calm &amp; governed</b> — rapi, bukan ramai</li><li><b>AI sebagai rekan kerja</b> — selalu terlihat, tidak mendominasi</li><li><b>Governance terlihat</b> — approval &amp; risiko adalah bagian UI</li><li>Frontend tidak menyimpan business logic</li></ul></div>
+ </div>
+</section>
+<!-- 8 GOVERNANCE -->
+<section class="slide dark"><span class="slide-num">08 / 12</span>
+ <p class="kicker">Governance &amp; Human-in-the-Loop</p>
+ <h2>Manusia memutuskan. <span class="grad">AI yang menjalankan.</span></h2>
+ <p class="lead">Setiap tindakan agent yang menyentuh data atau aksi sensitif wajib melewati rantai governance di backend — tanpa bypass.</p>
+ <div class="flow" style="margin-top:18px">
+  <div class="fstep"><b>1 · Policy</b><span>Izin by tier &amp; risk level</span></div><div class="farrow">→</div>
+  <div class="fstep hero"><b>2 · Approval</b><span>Manusia menyetujui</span></div><div class="farrow">→</div>
+  <div class="fstep"><b>3 · Mandate</b><span>Otorisasi berbatas waktu &amp; scope</span></div><div class="farrow">→</div>
+  <div class="fstep"><b>4 · Execution</b><span>Jalan hanya bila mandate valid</span></div><div class="farrow">→</div>
+  <div class="fstep"><b>5 · Audit</b><span>Tercatat dengan hash</span></div>
+ </div>
+ <div class="grid2" style="margin-top:16px">
+  <div class="card"><h3>Tier aksi</h3><p><span class="tag p">read</span> <span class="tag p">analyze</span> <span class="tag p">recommend</span> <span class="tag c">prepare</span> <span class="tag n">execute</span></p><p>Tier <b>prepare / execute</b> atau risiko tinggi selalu menunggu persetujuan manusia.</p></div>
+  <div class="card"><h3>Human-in-the-loop, nyata</h3><ul class="check"><li>Governance ditegakkan di backend — bukan sekadar tombol tersembunyi</li><li>Semua agent wajib lewat governance, tidak ada jalur bypass</li><li>Semua tindakan penting tercatat di audit trail</li></ul></div>
+ </div>
+</section>
+<!-- 9 USE CASE -->
+<section class="slide light"><span class="slide-num">09 / 12</span>
+ <p class="kicker">Real-World Use Case</p>
+ <h2>Contoh nyata: <span class="grad">laporan keuangan bulanan</span></h2>
+ <div class="flow" style="flex-wrap:wrap">
+  <div class="fstep" style="flex:1 1 200px"><b>1 · Instruksi</b><span>Frontend mengirim permintaan ke API</span></div><div class="farrow">→</div>
+  <div class="fstep" style="flex:1 1 200px"><b>2 · Validasi</b><span>API memeriksa identitas &amp; akses user</span></div><div class="farrow">→</div>
+  <div class="fstep hero" style="flex:1 1 200px"><b>3 · WorkBuddy</b><span>Memahami &amp; mendelegasikan ke Finance Agent</span></div><div class="farrow">→</div>
+  <div class="fstep" style="flex:1 1 200px"><b>4 · Analisis</b><span>Agent memakai tools yang diizinkan</span></div><div class="farrow">→</div>
+  <div class="fstep" style="flex:1 1 200px"><b>5 · Approval</b><span>Aksi sensitif memicu persetujuan</span></div><div class="farrow">→</div>
+  <div class="fstep" style="flex:1 1 200px"><b>6 · Hasil</b><span>Laporan tampil di dashboard · tercatat di audit log</span></div>
+ </div>
+ <div class="grid3" style="margin-top:16px">
+  <div class="card"><div class="icon">🛡️</div><h3>Aman</h3><p>Data hanya diakses sesuai izin; tidak ada eksekusi tanpa otorisasi.</p></div>
+  <div class="card"><div class="icon p">⏱️</div><h3>Terukur</h3><p>Setiap langkah terlihat — siapa, kapan, dan atas dasar apa.</p></div>
+  <div class="card"><div class="icon c">📊</div><h3>Bermanfaat</h3><p>Manajer mendapat laporan siap pakai, bukan tumpukan data mentah.</p></div>
+ </div>
+</section>
+<!-- 10 DIFFERENTIATORS -->
+<section class="slide light"><span class="slide-num">10 / 12</span>
+ <p class="kicker">Key Differentiators</p>
+ <h2>Kenapa DEXTRA <span class="grad">berbeda</span></h2>
+ <table style="margin-top:16px">
+  <thead><tr><th style="width:38%">Aspek</th><th style="width:31%">DEXTRA</th><th>Chatbot / AI umum</th></tr></thead>
+  <tbody>
+   <tr><td><b>Governance</b></td><td class="yes">✓ Wajib, di backend, tanpa bypass</td><td class="no">✕ Opsional / tidak ada</td></tr>
+   <tr><td><b>Human-in-the-loop</b></td><td class="yes">✓ Approval untuk aksi sensitif</td><td class="no">✕ Keputusan otomatis</td></tr>
+   <tr><td><b>Orkestrasi</b></td><td class="yes">✓ WorkBuddy → 4 agent spesialis</td><td class="no">✕ Satu model, satu tugas</td></tr>
+   <tr><td><b>Audit trail</b></td><td class="yes">✓ Setiap langkah tercatat + hash</td><td class="no">✕ Tidak terlacak</td></tr>
+   <tr><td><b>Enterprise scope</b></td><td class="yes">✓ HR · Finance · Inventory · Operations</td><td class="no">✕ Umum / ad-hoc</td></tr>
+  </tbody>
+ </table>
+ <p class="note">DEXTRA bukan sekadar chatbot yang bisa menjawab — ini <b>AI workforce yang bisa dipercaya perusahaan</b>, karena setiap aksi punya izin, persetujuan, dan jejak audit.</p>
+</section>
+<!-- 11 TECH & ARCH -->
+<section class="slide light"><span class="slide-num">11 / 12</span>
+ <p class="kicker">Technology &amp; Architecture</p>
+ <h2>Tiga lapisan, <span class="grad">satu platform</span></h2>
+ <div class="grid3" style="margin-top:16px">
+  <div class="card"><div class="icon n">🖥️</div><h3>Application</h3><p>Next.js (App Router) · Tailwind · reusable UI components · dashboard &amp; workspace.</p></div>
+  <div class="card"><div class="icon p">🧠</div><h3>Intelligence</h3><p>WorkBuddy · multi-agent orchestration · tools · workflow engine · provider-agnostic.</p></div>
+  <div class="card"><div class="icon c">🛡️</div><h3>Governance &amp; Data</h3><p>FastAPI · RBAC + policy enforcement · PostgreSQL · Redis/queue · audit trail.</p></div>
+ </div>
+ <div class="flow" style="margin-top:14px">
+  <div class="fstep"><b>Web</b><span>Next.js</span></div><div class="farrow">→</div>
+  <div class="fstep"><b>API</b><span>FastAPI: auth · validation</span></div><div class="farrow">→</div>
+  <div class="fstep hero"><b>WorkBuddy</b><span>Orchestrator</span></div><div class="farrow">→</div>
+  <div class="fstep"><b>Agents</b><span>HR · Finance · Inventory · Ops</span></div><div class="farrow">→</div>
+  <div class="fstep"><b>Governance</b><span>Policy → audit</span></div><div class="farrow">→</div>
+  <div class="fstep"><b>Data</b><span>PostgreSQL · Redis</span></div>
+ </div>
+ <p class="note"><b>Catatan kejujuran:</b> stack di atas adalah <b>desain arsitektur</b> DEXTRA — bukan klaim bahwa semuanya sudah terimplementasi penuh. Status implementasi selalu dinyatakan jujur per modul; modul monolith lebih dulu, service dipisah hanya bila benar-benar dibutuhkan.</p>
+</section>
+<!-- 12 VISION & CLOSING -->
+<section class="slide dark"><span class="slide-num">12 / 12</span>
+ <p class="kicker">Vision &amp; Closing</p>
+ <h2>Vision: <span class="grad">AI workforce yang dipercaya</span></h2>
+ <p class="statement">“Setiap perusahaan berhak memakai AI <span style="color:var(--electric2)">tanpa kehilangan kendali</span>.”</p>
+ <div class="grid3" style="margin-top:20px">
+  <div class="card"><h3>🎯 Misi</h3><p>Menghadirkan AI workforce enterprise yang produktif, aman, dan dapat diaudit.</p></div>
+  <div class="card"><h3>🧭 Nilai</h3><p>Manusia memegang keputusan · governance tidak bisa di-bypass · jejak untuk setiap aksi.</p></div>
+  <div class="card"><h3>🚀 Langkah berikut</h3><p>Memperdalam integrasi domain &amp; workflow — tetap governed, tetap jujur soal status.</p></div>
+ </div>
+ <p class="tagline" style="margin-top:24px;font-size:28px">DEXTRA — Powerful AI. Governed by design.</p>
+ <p class="lead">Terima kasih. Siap menjawab pertanyaan.</p>
+</section>
+</div>
+<div id="chrome">
+ <span class="brand">DEXTRA</span>
+ <span id="hint">← → untuk navigasi · klik untuk lanjut</span>
+ <span id="counter">1 / 12</span>
+ <span id="nav-btns"><button id="prev" aria-label="Sebelumnya">‹ Prev</button><button id="next" aria-label="Berikutnya">Next ›</button></span>
+</div>
+<script>
+(function(){
+ var slides=document.querySelectorAll('.slide'), i=0, total=slides.length;
+ var bar=document.getElementById('progress'), cur=document.getElementById('counter');
+ function show(n){ i=Math.max(0,Math.min(total-1,n)); slides.forEach(function(s,k){s.classList.toggle('active',k===i)}); bar.style.width=((i+1)/total*100)+'%'; cur.textContent=(i+1)+' / '+total; }
+ document.getElementById('next').onclick=function(){show(i+1)};
+ document.getElementById('prev').onclick=function(){show(i-1)};
+ document.addEventListener('keydown',function(e){ if(e.key==='ArrowRight'||e.key===' '||e.key==='PageDown')show(i+1); if(e.key==='ArrowLeft'||e.key==='PageUp')show(i-1); if(e.key==='Home')show(0); if(e.key==='End')show(total-1); });
+ document.getElementById('deck').addEventListener('click',function(e){ if(e.target.closest('button,a'))return; var x=e.clientX/window.innerWidth; show(x>0.5?i+1:i-1); });
+ show(0);
+})();
+</script>
+</body>
+</html>
