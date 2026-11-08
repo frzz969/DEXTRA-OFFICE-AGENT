@@ -46,3 +46,25 @@ class OfficePlanRequest(Base, IdMixin, TimestampMixin):
     created_by_service_account_id: Mapped[str | None] = mapped_column(
         ForeignKey("service_accounts.id", ondelete="SET NULL"), nullable=True
     )
+
+
+OFFICE_INTAKE_STATES = ("needs_clarification", "planned", "blocked")
+
+
+class OfficeIntake(Base, IdMixin, TimestampMixin):
+    __tablename__ = "office_intakes"
+    __table_args__ = (
+        UniqueConstraint("tenant_id", "request_id", name="office_intake_request_id"),
+    )
+
+    tenant_id: Mapped[str] = mapped_column(
+        ForeignKey("tenants.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    request_id: Mapped[str] = mapped_column(String(96), nullable=False)
+    raw_text: Mapped[str] = mapped_column(Text, default="", nullable=False)
+    intent: Mapped[str] = mapped_column(String(64), default="", nullable=False)
+    state: Mapped[str] = mapped_column(String(24), default="needs_clarification", nullable=False)
+    fields_json: Mapped[str] = mapped_column(Text, default="{}", nullable=False)
+    clarification_json: Mapped[str] = mapped_column(Text, default="[]", nullable=False)
+    plan_id: Mapped[str | None] = mapped_column(String(96), nullable=True)
+    provider: Mapped[str] = mapped_column(String(64), default="deterministic-fallback", nullable=False)

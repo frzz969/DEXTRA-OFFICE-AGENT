@@ -11,7 +11,10 @@
           "format": "url",
           "env": "DEXTRA_API_URL"
         }
-      ]
+      ],
+      "functions": {
+        "src/app/api/[...proxy]/route.ts": { "maxDuration": 60 }
+      }
     },
     "app": {
       "root": "apps/api",
@@ -19,8 +22,5 @@
       "entrypoint": "app.main:app"
     }
   },
-  "rewrites": [{ "source": "/(.*)", "destination": { "service": "web" } }],
-  "functions": {
-    "apps/web/src/app/api/[...proxy]/route.ts": { "maxDuration": 60 }
-  }
+  "rewrites": [{ "source": "/(.*)", "destination": { "service": "web" } }]
 }

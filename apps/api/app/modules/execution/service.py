@@ -87,16 +87,30 @@ def _adapter_task(params: dict) -> tuple[str, Path]:
     return rid, path
 
 
+#: Peta tipe aksi ke adapter. Tipe lama (email/calendar/task) tetap didukung
+#: agar mandate lama tidak rusak; tipe nyata dari Office Agent dipetakan.
+_ACTION_ADAPTERS = {
+    "send_email": "email",
+    "email": "email",
+    "create_calendar_event": "calendar",
+    "calendar": "calendar",
+    "create_task": "task",
+    "task": "task",
+}
+
+
 def _dispatch(action_type: str, params: dict) -> tuple[str, Path]:
-    at = (action_type or "").lower()
-    if at == "email":
+    adapter = _ACTION_ADAPTERS.get((action_type or "").lower())
+    if adapter == "email":
         return _adapter_email(params)
-    if at == "calendar":
+    if adapter == "calendar":
         return _adapter_calendar(params)
-    if at == "task":
+    if adapter == "task":
         return _adapter_task(params)
-    # default treat as task
-    return _adapter_task(params)
+    raise ExecutionError(
+        "UNSUPPORTED_ACTION_TYPE",
+        f"Tipe aksi tidak didukung: {action_type!r}.",
+    )
 
 
 def execute(
@@ -138,7 +152,8 @@ def execute(
 
     try:
         mandate = mandate_service.validate_for_execution(
-            db, mandate_id=mandate_id, action_id=action_id, params=params
+            db, mandate_id=mandate_id, action_id=action_id, params=params,
+            action_type=action_type,
         )
     except MandateError as exc:
         audit_repo.append_event(
@@ -174,6 +189,9 @@ def execute(
         if again is None:
             raise
         return again
+
+    mandate.consumed_by_execution_id = execution.id
+    db.flush()
 
     db.add(ExecutionStep(
         id=f"stp_{execution.id}_1", execution_id=execution.id, seq=1,

@@ -21,15 +21,15 @@ domain bisnis yang dikelola oleh agent khusus di bawah pengawasan governance.
 | Language           | TypeScript                       |
 | Frontend           | Next.js (App Router), Office Agent design |
 | Backend            | FastAPI (Python), ported from DEXTRA reference |
-| Database           | PostgreSQL                       |
-| ORM                | Prisma                           |
-| Queue              | Redis + BullMQ                   |
-| Validation         | Zod                              |
+| Database           | SQLite (dev) / PostgreSQL (target) |
+| ORM                | SQLAlchemy 2 + Alembic           |
+| Queue              | Belum ada; `apps/worker` masih kerangka |
+| Validation         | Pydantic (backend); belum ada skema Zod bersama |
 | UI                 | Tailwind + reusable components   |
-| AI                 | Provider-agnostic                |
-| Agent architecture | Multi-agent orchestration        |
-| Governance         | RBAC + policy enforcement        |
-| Testing            | Vitest + Playwright              |
+| AI                 | Provider-agnostic; belum ada provider terpasang di backend |
+| Agent architecture | Kontrak orchestration; runtime agent belum berjalan |
+| Governance         | RBAC + capability + policy/approval/mandate |
+| Testing            | pytest (backend). Runner JS belum terpasang |
 
 ## Struktur
 

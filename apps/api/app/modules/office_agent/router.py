@@ -34,8 +34,9 @@ from ...core.security import CallerContext, require_capability
 from ...database.base import new_id
 from ...database.session import get_db
 from ...governance import approval as approval_service
+from ...governance.approval import PolicyDenied
 from ...governance.mandate import MandateError
-from ...models.office import OfficePlanRequest
+from ...models.office import OfficeIntake, OfficePlanRequest
 from ...repositories import audit as audit_repo
 
 router = APIRouter(tags=["office-agent"])
@@ -104,6 +105,11 @@ def submit_plan(
         return _serialize(existing)
 
     actions = [action.model_dump() for action in payload.actions]
+    computed = _hash_actions(actions)
+    if payload.plan_hash and payload.plan_hash != computed:
+        raise HTTPException(
+            status_code=422, detail={"code": "PLAN_HASH_MISMATCH", "message": "plan_hash mismatch"}
+        )
     seen = set()
     for action in actions:
         if action["action_id"] in seen:
@@ -117,7 +123,7 @@ def submit_plan(
         tenant_id=tenant_id,
         request_id=payload.request_id,
         plan_id=payload.plan_id,
-        plan_hash=payload.plan_hash or _hash_actions(actions),
+        plan_hash=computed,
         source_json=json.dumps(payload.source, sort_keys=True),
         document_json=json.dumps(payload.document, sort_keys=True),
         actions_json=json.dumps(actions, sort_keys=True),
@@ -217,11 +223,17 @@ def approve_action(
         reason=payload.reason,
         ttl_minutes=payload.ttl_minutes,
         tenant_id=tenant_id,
+        findings=tuple(json.loads(row.findings_json or "[]")),
     )
     try:
         approval, mandate = approval_service.record_decision(
             db, request, actor="office_agent", scope=caller.scope
         )
+    except PolicyDenied as exc:
+        db.rollback()
+        raise HTTPException(
+            status_code=409, detail={"code": exc.evaluation.reason_code, "message": exc.evaluation.detail}
+        ) from exc
     except MandateError as exc:
         db.rollback()
         raise HTTPException(
@@ -239,4 +251,259 @@ def approve_action(
         "action_id": action["action_id"],
         "decision": approval.decision,
         "next": "POST /api/v1/executions dengan mandate_id untuk mengeksekusi.",
+    }
+# ---- Intake WorkBuddy (deterministik, tanpa LLM) ----
+
+import re as _re
+
+
+class IntakePayload(BaseModel):
+    request_id: str = Field(min_length=4, max_length=96)
+    text: str = Field(min_length=1, max_length=4000)
+    context: dict = Field(default_factory=dict)
+
+
+class ClarifyPayload(BaseModel):
+    answers: dict = Field(default_factory=dict)
+
+
+_REQUIRED = {
+    "send_email": ["recipient", "subject", "body"],
+    "create_task": ["title"],
+    "create_calendar_event": ["title", "when"],
+}
+
+
+def _classify(text: str) -> str:
+    low = text.lower()
+    if any(k in low for k in ("email", "mail", "kirim", "surat")):
+        return "send_email"
+    if any(k in low for k in ("task", "tugas", "todo")):
+        return "create_task"
+    if any(k in low for k in ("meeting", "jadwal", "calendar", "acara", "rapat")):
+        return "create_calendar_event"
+    return "send_email"
+
+
+def _extract(text: str, fields: dict) -> dict:
+    f = dict(fields)
+    low = text.lower()
+    # recipient
+    m = _re.search(r"(?:to|kepada|recipient)\s*[:=]\s*([^\n,;]+)", low)
+    if m and "recipient" not in f:
+        f["recipient"] = m.group(1).strip()
+    # subject
+    m = _re.search(r"(?:subject|subjek)\s*[:=]\s*([^\n]+)", low)
+    if m and "subject" not in f:
+        f["subject"] = m.group(1).strip()
+    # title
+    m = _re.search(r"(?:title|judul)\s*[:=]\s*([^\n]+)", low)
+    if m and "title" not in f:
+        f["title"] = m.group(1).strip()
+    # when
+    m = _re.search(r"(?:when|kapan|pada|at)\s*[:=]\s*([^\n]+)", low)
+    if m and "when" not in f:
+        f["when"] = m.group(1).strip()
+    # body: rest after 'body:'
+    m = _re.search(r"(?:body|isi)\s*[:=]\s*([^\n]+)", low)
+    if m and "body" not in f:
+        f["body"] = m.group(1).strip()
+    if "title" not in f and intent_placeholder(low):
+        pass
+    return f
+
+
+def intent_placeholder(_low: str) -> bool:
+    return False
+
+
+def _questions(intent: str, fields: dict) -> list[dict]:
+    out = []
+    for req in _REQUIRED[intent]:
+        if req not in fields or not fields.get(req):
+            out.append({"field": req, "question": f"Isi {req} untuk {intent}."})
+    return out
+
+
+def _build_plan(intake: OfficeIntake, fields: dict, db, tenant_id, caller) -> str:
+    intent = intake.intent
+    if intent == "send_email":
+        params = {"to": fields.get("recipient", ""), "subject": fields.get("subject", ""), "body": fields.get("body", "")}
+    elif intent == "create_task":
+        params = {"title": fields.get("title", ""), "description": fields.get("body", "")}
+    else:
+        params = {"title": fields.get("title", ""), "when": fields.get("when", "")}
+    actions = [{
+        "action_id": "act-1",
+        "action_type": intent,
+        "params": params,
+        "source_ref": {"intake_id": intake.id},
+    }]
+    plan_id = f"plan_{intake.request_id}"
+    # create OfficePlanRequest
+    from ...database.base import new_id
+    import json as _json
+    row = OfficePlanRequest(
+        id=new_id("ofp"),
+        tenant_id=tenant_id,
+        request_id=intake.request_id,
+        plan_id=plan_id,
+        plan_hash=_hash_actions(actions),
+        source_json=_json.dumps({"intake_id": intake.id}, sort_keys=True),
+        document_json=_json.dumps({"text": intake.raw_text}, sort_keys=True),
+        actions_json=_json.dumps(actions, sort_keys=True),
+        findings_json="[]",
+        validation_json=_json.dumps({"provider": "deterministic-fallback"}, sort_keys=True),
+        status="received",
+        created_by_user_id=caller.principal_id if caller.auth_kind == "session" else None,
+        created_by_service_account_id=caller.principal_id if caller.auth_kind == "service_token" else None,
+    )
+    db.add(row)
+    db.commit()
+    return plan_id
+
+
+@router.post("/office-agent/intake", status_code=201)
+def create_intake(
+    payload: IntakePayload,
+    db: DbSession = Depends(get_db),
+    caller: CallerContext = Depends(require_capability("create_request")),
+) -> dict:
+    tenant_id = require_tenant(caller)
+    existing = db.scalar(
+        select(OfficeIntake).where(
+            OfficeIntake.tenant_id == tenant_id,
+            OfficeIntake.request_id == payload.request_id,
+        )
+    )
+    if existing is not None:
+        return {
+            "id": existing.id,
+            "request_id": existing.request_id,
+            "intent": existing.intent,
+            "state": existing.state,
+            "fields": json.loads(existing.fields_json or "{}"),
+            "questions": json.loads(existing.clarification_json or "[]"),
+            "plan_id": existing.plan_id,
+            "provider": existing.provider,
+        }
+
+    intent = _classify(payload.text)
+    fields = _extract(payload.text, {})
+    questions = _questions(intent, fields)
+
+    from ...database.base import new_id
+    intake = OfficeIntake(
+        id=new_id("int"),
+        tenant_id=tenant_id,
+        request_id=payload.request_id,
+        raw_text=payload.text,
+        intent=intent,
+        state="needs_clarification" if questions else "planned",
+        fields_json=json.dumps(fields, sort_keys=True),
+        clarification_json=json.dumps(questions, sort_keys=True),
+        provider="deterministic-fallback",
+    )
+    db.add(intake)
+    audit_repo.append_event(
+        db,
+        event_type="office_intake_received",
+        actor="service" if caller.auth_kind == "service_token" else "user",
+        scope=caller.scope,
+        action="intake",
+        resource=intake.id,
+        decision="allow",
+        tenant_id=tenant_id,
+        detail={"intent": intent, "state": intake.state, "questions": len(questions)},
+    )
+    if not questions:
+        plan_id = _build_plan(intake, fields, db, tenant_id, caller)
+        intake.plan_id = plan_id
+        intake.state = "planned"
+        db.commit()
+    else:
+        db.commit()
+
+    return {
+        "id": intake.id,
+        "request_id": intake.request_id,
+        "intent": intake.intent,
+        "state": intake.state,
+        "fields": fields,
+        "questions": questions,
+        "plan_id": intake.plan_id,
+        "provider": intake.provider,
+    }
+
+
+@router.post("/office-agent/intake/{intake_id}/clarify", status_code=200)
+def clarify_intake(
+    intake_id: str,
+    payload: ClarifyPayload,
+    db: DbSession = Depends(get_db),
+    caller: CallerContext = Depends(require_capability("create_request")),
+) -> dict:
+    tenant_id = require_tenant(caller)
+    intake = db.scalar(
+        select(OfficeIntake).where(
+            OfficeIntake.tenant_id == tenant_id, OfficeIntake.id == intake_id
+        )
+    )
+    if intake is None:
+        raise HTTPException(status_code=404, detail="Intake tidak ditemukan.")
+    fields = json.loads(intake.fields_json or "{}")
+    fields.update(payload.answers or {})
+    questions = _questions(intake.intent, fields)
+    intake.fields_json = json.dumps(fields, sort_keys=True)
+    intake.clarification_json = json.dumps(questions, sort_keys=True)
+    if questions:
+        intake.state = "needs_clarification"
+        db.commit()
+        return {
+            "id": intake.id,
+            "intent": intake.intent,
+            "state": intake.state,
+            "fields": fields,
+            "questions": questions,
+            "plan_id": intake.plan_id,
+            "provider": intake.provider,
+        }
+    plan_id = _build_plan(intake, fields, db, tenant_id, caller)
+    intake.plan_id = plan_id
+    intake.state = "planned"
+    db.commit()
+    return {
+        "id": intake.id,
+        "intent": intake.intent,
+        "state": intake.state,
+        "fields": fields,
+        "questions": [],
+        "plan_id": plan_id,
+        "provider": intake.provider,
+    }
+
+
+@router.get("/office-agent/intake/{intake_id}")
+def get_intake(
+    intake_id: str,
+    db: DbSession = Depends(get_db),
+    caller: CallerContext = Depends(require_capability("view_own")),
+) -> dict:
+    tenant_id = require_tenant(caller)
+    intake = db.scalar(
+        select(OfficeIntake).where(
+            OfficeIntake.tenant_id == tenant_id, OfficeIntake.id == intake_id
+        )
+    )
+    if intake is None:
+        raise HTTPException(status_code=404, detail="Intake tidak ditemukan.")
+    return {
+        "id": intake.id,
+        "request_id": intake.request_id,
+        "intent": intake.intent,
+        "state": intake.state,
+        "fields": json.loads(intake.fields_json or "{}"),
+        "questions": json.loads(intake.clarification_json or "[]"),
+        "plan_id": intake.plan_id,
+        "provider": intake.provider,
     }

@@ -200,8 +200,14 @@ def _append_event_once(
     return event
 
 
-def verify_chain(db: Session) -> dict:
-    """Rekonstruksi rantai dari awal dan laporkan baris pertama yang rusak."""
+def verify_chain(db: Session, tenant_id: str | None = None) -> dict:
+    """Rekonstruksi rantai dari awal dan laporkan baris pertama yang rusak.
+
+    Rantai audit bersifat global (satu rantai lintas tenant), jadi `tenant_id`
+    tidak memfilter event: pemanggil wajib terautentikasi (require_tenant di
+    router) dan rantai diverifikasi utuh. Parameter dipertahankan untuk
+    kompatibilitas.
+    """
     events = db.scalars(select(AuditEvent).order_by(AuditEvent.seq.asc())).all()
     prev_hash = ""
     for event in events:

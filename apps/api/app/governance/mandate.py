@@ -107,9 +107,17 @@ def validate_for_execution(
     mandate_id: str,
     action_id: str,
     params: dict,
+    action_type: str | None = None,
+    execution_id: str | None = None,
     now: datetime | None = None,
 ) -> Mandate:
-    """Dipanggil tepat sebelum aksi dijalankan, bukan hanya saat approval."""
+    """Dipanggil tepat sebelum aksi dijalankan, bukan hanya saat approval.
+
+    Nonce dikonsumsi di sini, bukan saat mandate diterbitkan. Pemanggil
+    (Execution Gateway) memeriksa idempotency key **sebelum** fungsi ini, jadi
+    retry dengan permintaan yang sama mengembalikan eksekusi lama tanpa
+    memvalidasi ulang; aksi berbeda dengan mandate yang sama tetap ditolak.
+    """
     mandate = db.get(Mandate, mandate_id)
     if mandate is None:
         raise MandateError("MANDATE_NOT_FOUND", "Mandate tidak ditemukan.")
@@ -123,15 +131,32 @@ def validate_for_execution(
             "ACTION_NOT_IN_MANDATE",
             f"Mandate mengikat aksi {mandate.action_id}, bukan {action_id}.",
         )
+    if action_type is not None and mandate.action_type != action_type:
+        raise MandateError(
+            "ACTION_TYPE_MISMATCH",
+            f"Mandate mengikat action_type {mandate.action_type}, bukan {action_type}.",
+        )
     if mandate.params_hash != params_digest(params):
         raise MandateError(
             "PARAMS_CHANGED",
             "Parameter aksi berubah sejak disetujui; mandate tidak berlaku.",
         )
+    # Nonce sekali pakai. Diperiksa sebelum status/kedaluwarsa supaya pemakaian
+    # ulang dilaporkan sebagai NONCE_ALREADY_USED, bukan "expired".
+    if mandate.nonce_used_at is not None:
+        raise MandateError(
+            "NONCE_ALREADY_USED",
+            "Nonce mandate sudah dipakai; mandate tidak dapat dieksekusi lagi.",
+        )
     if mandate.status in ("expired", "completed", "cancelled", "rejected"):
         raise MandateError("MANDATE_NOT_USABLE", f"Mandate berstatus {mandate.status}.")
     if not mandate.is_usable(now):
         raise MandateError("MANDATE_EXPIRED", "Mandate sudah kedaluwarsa.")
+
+    moment = now or datetime.now(timezone.utc)
+    mandate.nonce_used_at = moment
+    mandate.consumed_by_execution_id = execution_id
+    db.flush()
     return mandate
 
 

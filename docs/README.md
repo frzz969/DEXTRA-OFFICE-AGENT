@@ -39,8 +39,9 @@ kebenaran; status implementasi dijaga tetap jujur di
 - [inventory.md](modules/inventory.md)
 - [governance.md](modules/governance.md)
 
-## Operasional
+## Kontrak & operasional
 
+- [API-CONTRACT-P7-P12.md](API-CONTRACT-P7-P12.md) — kontrak endpoint + daftar rute terverifikasi (dibandingkan otomatis oleh tes).
 - [api/README.md](api/README.md)
 - [database/README.md](database/README.md)
 - [deployment/README.md](deployment/README.md)

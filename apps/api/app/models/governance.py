@@ -114,6 +114,11 @@ class Mandate(Base, IdMixin, TimestampMixin):
     plan_hash: Mapped[str] = mapped_column(String(128), default="", nullable=False)
     approver_id: Mapped[str] = mapped_column(String(64), default="", nullable=False)
     nonce: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    #: Nonce bersifat sekali pakai. Diisi tepat sebelum aksi dijalankan; eksekusi
+    #: berikutnya dengan mandate yang sama ditolak meskipun idempotency key-nya
+    #: berbeda (mis. action_type lain untuk action_id yang sama).
+    nonce_used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    consumed_by_execution_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     status: Mapped[str] = mapped_column(String(24), default="issued", nullable=False, index=True)
     issued_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)

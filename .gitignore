@@ -52,3 +52,5 @@ social-media/
 
 # tooling state
 .playwright-mcp/
+
+.vercel

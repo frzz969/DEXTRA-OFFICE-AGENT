@@ -3,6 +3,7 @@
  */
 
 export * from './domain';
+export * from './authorization';
 export * from './auth';
 export * from './users';
 export * from './employees';
